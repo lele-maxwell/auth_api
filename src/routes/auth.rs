@@ -1,22 +1,19 @@
 use std::env;
+use std::os::linux::raw::stat;
 
-use axum::{
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
+use axum::extract::State;
+use axum::{http::StatusCode, response::IntoResponse, Json};
 use jsonwebtoken::{encode, EncodingKey, Header};
 use serde_json::json;
 use utoipa::OpenApi;
 
-use crate::models::{LoginRequest, LoginResponse, Role, User};
+use crate::middleware::auth::Claims;
 use crate::models::user::RegisterRequest;
 use crate::models::user::RegisterResponse;
-use crate::middleware::auth::Claims;
+use crate::models::{LoginRequest, LoginResponse, Role, User};
+use crate::AppState;
 use dotenv::dotenv;
 use uuid::Uuid;
-
-
 
 #[derive(OpenApi)]
 #[openapi(
@@ -28,8 +25,6 @@ pub struct AuthApi;
 // Add a Registration route with username, password, confirm password. Newly register users role should be User
 // and password should be hashed before storing in the database.
 
-
-
 #[utoipa::path(
     post,
     path = "/register",
@@ -39,26 +34,38 @@ pub struct AuthApi;
         (status = 400, description = "Bad request")
     )
 )]
-pub async fn register(Json(payload): Json<RegisterRequest>) -> impl IntoResponse {
-    if payload.username.is_empty() || payload.password.is_empty() || payload.password != payload.confirm_password {
+
+
+pub async fn register( State(mut state ):State<AppState>,  Json(payload): Json<RegisterRequest> ) -> impl IntoResponse {
+    if payload.username.is_empty()
+        || payload.password.is_empty()
+        || payload.password != payload.confirm_password
+    {
         return (
             StatusCode::BAD_REQUEST,
             Json(json!({"error": "Invalid registration data"})),
-        ).into_response();
+        )
+            .into_response();
     }
+  let mut users = state.users.lock().unwrap();
 
     // If validation passes, hash the password and store the user.
     let hashed_password = bcrypt::hash(payload.password, 4).unwrap();
     let user = User {
-        id: Uuid::new_v4().to_string(),     
+        id: Uuid::new_v4().to_string(),
         username: payload.username,
         password: hashed_password,
         role: Role::User,
     };
-
-    // Store the user in the database (omitted for brevity).
-
-    (StatusCode::CREATED, Json(RegisterResponse { message: "User registered successfully".into() })).into_response()
+    
+    users.push(user.clone()); // Store the user in the state (in-memory for this example).
+    (
+        StatusCode::CREATED,
+        Json(RegisterResponse {
+            message: "User registered successfully".into(),
+        }),
+    )
+    .into_response()
 }
 
 #[utoipa::path(
@@ -71,48 +78,55 @@ pub async fn register(Json(payload): Json<RegisterRequest>) -> impl IntoResponse
     )
 )]
 pub async fn login(Json(payload): Json<LoginRequest>) -> impl IntoResponse {
-
     dotenv().ok(); // Load environment variables from .env file
-    // In production, verify against a database
+                   // In production, verify against a database
 
-    let mut  claims = Claims {
+    let mut claims = Claims {
         sub: String::new(),
         role: Role::User,
         exp: 0,
     };
-    if payload.username == "admin"  && payload.password == "password" {
-         claims = Claims {
+    if payload.username == "admin" && payload.password == "password" {
+        claims = Claims {
             sub: payload.username.clone(),
             role: Role::Admin,
             exp: (chrono::Utc::now() + chrono::Duration::hours(24)).timestamp() as usize,
         };
+    } else if payload.username == "user1" && payload.password == "password123" {
+        claims = Claims {
+            sub: payload.username.clone(),
+            role: Role::User,
+            exp: (chrono::Utc::now() + chrono::Duration::hours(24)).timestamp() as usize,
+        };
+    } else if payload.username == "user2" && payload.password == "password123" {
+        claims = Claims {
+            sub: payload.username.clone(),
+            role: Role::User,
+            exp: (chrono::Utc::now() + chrono::Duration::hours(24)).timestamp() as usize,
+        };
     }
-     else if payload.username == "user"  && payload.password == "password123" {
-         claims = Claims {
-             sub: payload.username.clone(),
-             role: Role::User,
-             exp: (chrono::Utc::now() + chrono::Duration::hours(24)).timestamp() as usize,
-         };
-    }
-    else{
+    // In a real application, you would verify the username and password against a database.
+    // For simplicity, we are using hardcoded values here.
+    else {
         return (
             StatusCode::UNAUTHORIZED,
             Json(json!({"error": "Invalid credentials"})),
-        ).into_response();
+        )
+            .into_response();
     }
-    
+
     let token = encode(
         &Header::default(),
         &claims,
-        &EncodingKey::from_secret(env::var("JWT_SECRET").expect("JWT_SECRET must be set").as_ref()),
+        &EncodingKey::from_secret(
+            env::var("JWT_SECRET")
+                .expect("JWT_SECRET must be set")
+                .as_ref(),
+        ),
     )
     .unwrap();
 
-    return (
-        StatusCode::OK,
-        Json(LoginResponse { token }),
-    ).into_response();
+    return (StatusCode::OK, Json(LoginResponse { token })).into_response();
 
- //   (StatusCode::UNAUTHORIZED, Json(json!({"error": "Invalid credentials"}))).into_response()
+    //   (StatusCode::UNAUTHORIZED, Json(json!({"error": "Invalid credentials"}))).into_response()
 }
-
