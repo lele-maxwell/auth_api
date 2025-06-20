@@ -18,25 +18,31 @@ async fn main() {
     #[openapi(
         info(title = "Auth API", description = "A simple auth API"),
         paths(
+            auth::register,
             auth::login,
-            protected::admin_route
+            protected::admin_route,
+            protected::user_route
         ),
         components(schemas(
             models::User,
             models::Role,
             models::LoginRequest,
-            models::LoginResponse
+            models::LoginResponse,
+            models::RegisterRequest,
+            models::RegisterResponse
         ))
     )]
     struct ApiDoc;
 
     let app = Router::new()
         .route("/admin", get(protected::admin_route))
+        .route("/user", get(protected::user_route))
         .layer(axum::middleware::from_fn(auth_middleware))
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
-        
+
+        .route("/register", post(auth::register))
         .route("/login", post(auth::login))
-        .layer(axum::middleware::from_fn(auth_middleware))
+        
         .layer(CorsLayer::permissive());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
