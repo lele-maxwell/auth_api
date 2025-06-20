@@ -37,7 +37,7 @@ async fn main() {
     let app = Router::new()
         .route("/admin", get(protected::admin_route))
         .route("/user", get(protected::user_route))
-        .layer(axum::middleware::from_fn(auth_middleware))
+        .layer(axum::middleware::from_fn(auth_middleware)) 
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
 
         .route("/register", post(auth::register))
