@@ -35,8 +35,10 @@ pub struct AuthApi;
     )
 )]
 
-
-pub async fn register( State(mut state ):State<AppState>,  Json(payload): Json<RegisterRequest> ) -> impl IntoResponse {
+pub async fn register(
+    State( state): State<AppState>,
+    Json(payload): Json<RegisterRequest>,
+) -> impl IntoResponse {
     if payload.username.is_empty()
         || payload.password.is_empty()
         || payload.password != payload.confirm_password
@@ -47,7 +49,7 @@ pub async fn register( State(mut state ):State<AppState>,  Json(payload): Json<R
         )
             .into_response();
     }
-  let mut users = state.users.lock().unwrap();
+    let mut users = state.users.lock().unwrap();
 
     // If validation passes, hash the password and store the user.
     let hashed_password = bcrypt::hash(payload.password, 4).unwrap();
@@ -57,7 +59,7 @@ pub async fn register( State(mut state ):State<AppState>,  Json(payload): Json<R
         password: hashed_password,
         role: Role::User,
     };
-    
+
     users.push(user.clone()); // Store the user in the state (in-memory for this example).
     (
         StatusCode::CREATED,
@@ -65,7 +67,7 @@ pub async fn register( State(mut state ):State<AppState>,  Json(payload): Json<R
             message: "User registered successfully".into(),
         }),
     )
-    .into_response()
+        .into_response()
 }
 
 #[utoipa::path(
@@ -77,43 +79,31 @@ pub async fn register( State(mut state ):State<AppState>,  Json(payload): Json<R
         (status = 401, description = "Invalid credentials")
     )
 )]
-pub async fn login(Json(payload): Json<LoginRequest>) -> impl IntoResponse {
-    dotenv().ok(); // Load environment variables from .env file
-                   // In production, verify against a database
+pub async fn login(
+    State(state): State<AppState>,
+    Json(payload): Json<LoginRequest>,
+) -> impl IntoResponse {
+    dotenv().ok();
 
-    let mut claims = Claims {
-        sub: String::new(),
-        role: Role::User,
-        exp: 0,
-    };
-    if payload.username == "admin" && payload.password == "password" {
-        claims = Claims {
-            sub: payload.username.clone(),
-            role: Role::Admin,
-            exp: (chrono::Utc::now() + chrono::Duration::hours(24)).timestamp() as usize,
-        };
-    } else if payload.username == "user1" && payload.password == "password123" {
-        claims = Claims {
-            sub: payload.username.clone(),
-            role: Role::User,
-            exp: (chrono::Utc::now() + chrono::Duration::hours(24)).timestamp() as usize,
-        };
-    } else if payload.username == "user2" && payload.password == "password123" {
-        claims = Claims {
-            sub: payload.username.clone(),
-            role: Role::User,
-            exp: (chrono::Utc::now() + chrono::Duration::hours(24)).timestamp() as usize,
-        };
-    }
-    // In a real application, you would verify the username and password against a database.
-    // For simplicity, we are using hardcoded values here.
-    else {
+    let users = state.users.lock().unwrap();
+    let user = users.iter().find(|u| u.username == payload.username);
+
+    if user.is_none() || bcrypt::verify(payload.password, &user.unwrap().password).ok() != Some(true) {
         return (
             StatusCode::UNAUTHORIZED,
             Json(json!({"error": "Invalid credentials"})),
         )
             .into_response();
     }
+
+    let  claims = Claims {
+        sub: payload.username.clone(),
+        role: user.unwrap().role.clone(),
+        exp: (chrono::Utc::now() + chrono::Duration::hours(24)).timestamp() as usize,
+    };
+
+
+      
 
     let token = encode(
         &Header::default(),
