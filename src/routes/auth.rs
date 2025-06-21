@@ -1,5 +1,5 @@
 use std::env;
-use std::os::linux::raw::stat;
+
 
 use axum::extract::State;
 use axum::{http::StatusCode, response::IntoResponse, Json};
@@ -22,7 +22,7 @@ use uuid::Uuid;
 )]
 pub struct AuthApi;
 
-// Add a Registration route with username, password, confirm password. Newly register users role should be User
+// Add a Registration route with email, password, confirm password. Newly register users role should be User
 // and password should be hashed before storing in the database.
 
 #[utoipa::path(
@@ -39,9 +39,10 @@ pub async fn register(
     State(state): State<AppState>,
     Json(payload): Json<RegisterRequest>,
 ) -> impl IntoResponse {
-    if payload.username.is_empty()
+    if payload.email.is_empty()
         || payload.password.is_empty()
-        || payload.password != payload.confirm_password
+        || payload.first_name.is_empty()
+        || payload.last_name.is_empty()
     {
         return (
             StatusCode::BAD_REQUEST,
@@ -55,7 +56,9 @@ pub async fn register(
     let hashed_password = bcrypt::hash(payload.password, 4).unwrap();
     let user = User {
         id: Uuid::new_v4().to_string(),
-        username: payload.username,
+        first_name: payload.first_name,
+        last_name: payload.last_name,
+        email: payload.email,
         password: hashed_password,
         role: Role::User,
     };
@@ -64,7 +67,10 @@ pub async fn register(
     (
         StatusCode::CREATED,
         Json(RegisterResponse {
-            message: "User registered successfully".into(),
+            id: user.id.clone(),
+            first_name: user.first_name.clone(),
+            last_name: user.last_name.clone(),
+            email: user.email.clone(),
         }),
     )
         .into_response()
@@ -86,7 +92,7 @@ pub async fn login(
     dotenv().ok();
 
     let users = state.users.lock().unwrap();
-    let user = users.iter().find(|u| u.username == payload.username);
+    let user = users.iter().find(|u| u.email == payload.email);
 
     if user.is_none()
         || bcrypt::verify(payload.password, &user.unwrap().password).ok() != Some(true)
@@ -99,21 +105,19 @@ pub async fn login(
     }
 
     let claims = Claims {
-        sub: payload.username.clone(),
+        sub: payload.email.clone(),
         role: user.unwrap().role.clone(),
         exp: (chrono::Utc::now() + chrono::Duration::hours(24)).timestamp() as usize,
     };
-
+    let config = state.config.clone();
     let token = encode(
-        &Header::default(),
-        &claims,
-        &EncodingKey::from_secret(
-            env::var("JWT_SECRET")
-                .expect("JWT_SECRET must be set")
-                .as_ref(),
-        ),
-    )
-    .unwrap();
+            &Header::default(),
+            &claims,
+            &EncodingKey::from_secret(
+                config.jwt_secret.as_bytes(),
+            ),
+        )
+        .unwrap();
 
     return (StatusCode::OK, Json(LoginResponse { token })).into_response();
 

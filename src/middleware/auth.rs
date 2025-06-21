@@ -27,13 +27,16 @@ pub async fn auth_middleware(
         .ok_or(StatusCode::UNAUTHORIZED)?;
 
         dotenv().ok(); 
+
+        let config = state.config.clone();
         
     let token = auth_header
         .strip_prefix("Bearer ")
         .ok_or(StatusCode::UNAUTHORIZED)?;
 
     let key = DecodingKey::from_secret(
-        env::var("JWT_SECRET").expect("JWT_SECRET must be set").as_ref(), );
+        config.jwt_secret.as_bytes()
+    );
 
 
     let token_data = decode::<Claims>(token, &key, &Validation::default())
@@ -41,7 +44,9 @@ pub async fn auth_middleware(
 
     let user = User {
         id: Uuid::new_v4().to_string(), // In production, fetch from DB
-        username: token_data.claims.sub,
+        email: token_data.claims.sub,
+        first_name: String::new(), 
+        last_name: String::new(),  
         password: String::new(),
         role: token_data.claims.role,
     };

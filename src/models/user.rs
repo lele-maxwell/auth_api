@@ -1,12 +1,14 @@
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use uuid::Uuid;
+
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
 pub struct User {
     pub id: String, // Use Uuid for unique user identification
-    pub username: String,
+    pub first_name: String,
+    pub email: String,
     pub password: String, // Hashed in production
+    pub last_name: String,
     pub role: Role,
 }
 
@@ -18,18 +20,24 @@ pub enum Role {
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct RegisterRequest {
-    pub username: String,
+    pub first_name: String,
+    pub last_name: String, 
+    pub email: String,
     pub password: String,
-    pub confirm_password: String,
+    
 }
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct RegisterResponse {
-    pub message: String,
+    pub id: String, // Use Uuid for unique user identification
+    pub first_name: String,
+    pub last_name: String, 
+    pub email: String,
+
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct LoginRequest {
-    pub username: String,
+    pub email: String,
     pub password: String,
 }
 
