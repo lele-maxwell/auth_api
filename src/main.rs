@@ -4,20 +4,25 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use std::sync::Mutex;
+use tower_http::cors::CorsLayer;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-use tower_http::cors::CorsLayer;
-use std::sync::Mutex;
+pub mod middleware;
 pub mod models;
 pub mod routes;
-pub mod middleware;
+pub mod utils;
 
-use crate::{routes::{auth, protected}, middleware::auth::auth_middleware};
-
+use crate::{
+    middleware::auth::auth_middleware,
+    routes::{auth, protected},
+    utils::load_env,
+};
 
 #[derive(Debug, Clone)]
 pub struct AppState {
-    pub users: Arc<Mutex<Vec<models::User>>>, 
+    pub config: Arc<utils::Config>,
+    pub users: Arc<Mutex<Vec<models::User>>>,
 }
 #[tokio::main]
 async fn main() {
@@ -40,17 +45,18 @@ async fn main() {
         ))
     )]
 
-
     struct ApiDoc;
-    let state = AppState {users: Arc::new(Mutex::new(vec![]))};
+
+    let state = AppState {
+        config: Arc::new(load_env()),
+        users: Arc::new(Mutex::new(vec![])),
+    };
 
     let app = Router::new()
         .route("/admin", get(protected::admin_route))
         .route("/user", get(protected::user_route))
-
-        .layer(axum::middleware::from_fn(auth_middleware)) 
+        .layer(axum::middleware::from_fn_with_state(state.clone(), auth_middleware))
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
-        
         .route("/register", post(auth::register))
         .route("/login", post(auth::login))
         .layer(CorsLayer::permissive())

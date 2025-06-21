@@ -1,11 +1,11 @@
 use axum::{
-    body::Body, http::{Request, StatusCode}, middleware::Next, response::{IntoResponse, Response}
+    body::Body, extract::State, http::{Request, StatusCode}, middleware::Next, response::{IntoResponse, Response}
 };
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use std::{env, sync::Arc};
-use crate::models::{Role, User};
+use crate::{models::{Role, User}, AppState};
 use dotenv::dotenv;
 
 #[derive(Deserialize, Serialize)]
@@ -16,6 +16,7 @@ pub struct Claims {
 }
 
 pub async fn auth_middleware(
+    State(state): State<AppState>, 
     req: Request<Body>,
     next: Next,
 ) -> Result<Response, StatusCode> {

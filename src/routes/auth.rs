@@ -36,7 +36,7 @@ pub struct AuthApi;
 )]
 
 pub async fn register(
-    State( state): State<AppState>,
+    State(state): State<AppState>,
     Json(payload): Json<RegisterRequest>,
 ) -> impl IntoResponse {
     if payload.username.is_empty()
@@ -88,7 +88,9 @@ pub async fn login(
     let users = state.users.lock().unwrap();
     let user = users.iter().find(|u| u.username == payload.username);
 
-    if user.is_none() || bcrypt::verify(payload.password, &user.unwrap().password).ok() != Some(true) {
+    if user.is_none()
+        || bcrypt::verify(payload.password, &user.unwrap().password).ok() != Some(true)
+    {
         return (
             StatusCode::UNAUTHORIZED,
             Json(json!({"error": "Invalid credentials"})),
@@ -96,14 +98,11 @@ pub async fn login(
             .into_response();
     }
 
-    let  claims = Claims {
+    let claims = Claims {
         sub: payload.username.clone(),
         role: user.unwrap().role.clone(),
         exp: (chrono::Utc::now() + chrono::Duration::hours(24)).timestamp() as usize,
     };
-
-
-      
 
     let token = encode(
         &Header::default(),
