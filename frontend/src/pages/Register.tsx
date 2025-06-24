@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthApi, Configuration } from '@maxwell/auth-client';
+import { AuthApi, Configuration } from '../ts-client';
 
 const api = new AuthApi(new Configuration({ basePath: 'http://localhost:3000' }));
 

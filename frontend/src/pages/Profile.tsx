@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ProtectedApi, Configuration } from '@maxwell/auth-client';
+import { ProtectedApi, Configuration } from '../ts-client';
 import { getSessionToken, clearSession } from '../session';
 import { useNavigate } from 'react-router-dom';
 
