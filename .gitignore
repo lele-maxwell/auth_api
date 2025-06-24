@@ -1,2 +1,5 @@
 /target
 .env
+
+/ts-client
+/openapi.json

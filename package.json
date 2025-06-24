@@ -1,0 +1,18 @@
+{
+  "dependencies": {
+    "@types/react-router-dom": "^5.3.3",
+    "axios": "0.27.2",
+    "react-router-dom": "^7.6.2"
+  },
+  "devDependencies": {
+    "@types/babel__core": "^7.20.5",
+    "@types/babel__generator": "^7.27.0",
+    "@types/babel__template": "^7.4.4",
+    "@types/babel__traverse": "^7.20.7",
+    "@types/bonjour": "^3.5.13",
+    "@types/estree": "^1.0.8",
+    "@types/node": "^24.0.3",
+    "@types/prettier": "^2.7.3",
+    "@types/trusted-types": "^2.0.7"
+  }
+}

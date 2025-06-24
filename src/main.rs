@@ -12,6 +12,7 @@ pub mod middleware;
 pub mod models;
 pub mod routes;
 pub mod utils;
+use std::fs;
 
 use crate::{
     middleware::auth::auth_middleware,
@@ -24,28 +25,37 @@ pub struct AppState {
     pub config: Arc<utils::Config>,
     pub users: Arc<Mutex<Vec<models::User>>>,
 }
+
+#[derive(OpenApi)]
+#[openapi(
+    info(title = "Auth API", description = "A simple auth API", license(name = "MIT", identifier = "MIT")),
+    paths(
+        auth::register,
+        auth::login,
+        protected::admin_route,
+        protected::user_route
+    ),
+    components(schemas(
+        models::User,
+        models::Role,
+        models::LoginRequest,
+        models::LoginResponse,
+        models::RegisterRequest,
+        models::RegisterResponse
+    ))
+)]
+
+struct ApiDoc;
+// Write OpenAPI JSON to a file
+fn write_openapi_json() {
+    let openapi = ApiDoc::openapi();
+    let json = openapi.to_json().unwrap();
+    fs::write("openapi.json", json).expect("Failed to write openapi.json");
+}
+
 #[tokio::main]
 async fn main() {
-    #[derive(OpenApi)]
-    #[openapi(
-        info(title = "Auth API", description = "A simple auth API"),
-        paths(
-            auth::register,
-            auth::login,
-            protected::admin_route,
-            protected::user_route
-        ),
-        components(schemas(
-            models::User,
-            models::Role,
-            models::LoginRequest,
-            models::LoginResponse,
-            models::RegisterRequest,
-            models::RegisterResponse
-        ))
-    )]
-
-    struct ApiDoc;
+    write_openapi_json();
 
     let state = AppState {
         config: Arc::new(load_env()),
@@ -55,7 +65,10 @@ async fn main() {
     let app = Router::new()
         .route("/admin", get(protected::admin_route))
         .route("/user", get(protected::user_route))
-        .layer(axum::middleware::from_fn_with_state(state.clone(), auth_middleware))
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            auth_middleware,
+        ))
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .route("/register", post(auth::register))
         .route("/login", post(auth::login))
