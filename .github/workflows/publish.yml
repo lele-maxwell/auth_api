@@ -1,0 +1,51 @@
+name: Generate & Publish TS Client
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'api/**'
+      - 'openapi.json'
+      - 'ts-client/**'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: 🧰 Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://npm.pkg.github.com/
+          scope: '@lele-maxwell'
+
+      - name: 🦀 Set up Rust
+        uses: actions/setup-rust@v1
+
+      - name: 🧪 Install OpenAPI Generator
+        run: npm install @openapitools/openapi-generator-cli -g
+
+      - name: 🛠 Generate TS Client
+        run: ./scripts/generate-client.sh
+
+      - name: 📦 Bump Version & Create Changeset
+        working-directory: ts-client
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+
+          npx changeset version
+          git add .
+          git commit -m "chore(ts-client): auto version bump"
+          git tag v$(node -p "require('./package.json').version")
+          git push origin main --tags
+
+      - name: 🚀 Publish to GitHub Packages
+        working-directory: ts-client
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
