@@ -3,3 +3,6 @@
 
 /ts-client
 /openapi.json
+/node_modules
+/dist
+/.vscode

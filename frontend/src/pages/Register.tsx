@@ -1,41 +1,44 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AuthApi, Configuration } from '../ts-client';
+import React, { useState } from "react";
+import { authApi } from "../api";
+import { Link, useNavigate } from "react-router-dom";
+import { protectedApi } from "../api";
 
-const api = new AuthApi(new Configuration({ basePath: 'http://localhost:3000' }));
-
-const Register: React.FC = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [error, setError] = useState('');
+export default function Register() {
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+    first_name: "",
+    last_name: "",
+  });
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setMessage(null);
     try {
-      await api.register({ email: username, password, first_name: firstName, last_name: lastName });
-      navigate('/login');
-    } catch (err: any) {
-      setError(err?.response?.data?.error || 'Registration failed');
+      await authApi.register(form);
+      setMessage({ type: "success", text: "Registration successful! Redirecting to login..." });
+      setTimeout(() => {
+        navigate("/login");
+      }, 1200);
+    } catch (err) {
+      setMessage({ type: "error", text: "Registration failed. Please try again." });
     }
   };
 
   return (
-    <div>
+    <form className="auth-form" onSubmit={handleSubmit}>
       <h2>Register</h2>
-      <form onSubmit={handleSubmit}>
-        <input type="text" placeholder="First Name" value={firstName} onChange={e => setFirstName(e.target.value)} required />
-        <input type="text" placeholder="Last Name" value={lastName} onChange={e => setLastName(e.target.value)} required />
-        <input type="text" placeholder="Email" value={username} onChange={e => setUsername(e.target.value)} required />
-        <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
-        <button type="submit">Register</button>
-      </form>
-      {error && <div style={{color: 'red'}}>{error}</div>}
-    </div>
+      {message && (
+        <div className={`form-message ${message.type}`}>{message.text}</div>
+      )}
+      <input className="auth-input" placeholder="Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
+      <input className="auth-input" placeholder="First Name" value={form.first_name} onChange={e => setForm({ ...form, first_name: e.target.value })} />
+      <input className="auth-input" placeholder="Last Name" value={form.last_name} onChange={e => setForm({ ...form, last_name: e.target.value })} />
+      <input className="auth-input" placeholder="Password" type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
+      <button className="auth-btn" type="submit">Register</button>
+      <p className="switch-link">Already have an account? <Link to="/login">Login here</Link></p>
+    </form>
   );
-};
-
-export default Register; 
+}

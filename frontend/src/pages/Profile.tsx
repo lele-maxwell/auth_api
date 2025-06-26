@@ -1,47 +1,38 @@
-import React, { useEffect, useState } from 'react';
-import { ProtectedApi, Configuration } from '../ts-client';
-import { getSessionToken, clearSession } from '../session';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import { protectedApi } from "../api";
+import type { User } from "@maxwell/auth-client";
+import { useNavigate, useLocation } from "react-router-dom";
 
-const api = new ProtectedApi(new Configuration({ basePath: 'http://localhost:3000', accessToken: localStorage.getItem('accessToken') || '' }));
-
-const Profile: React.FC = () => {
-  const [user, setUser] = useState<any>(null);
-  const [error, setError] = useState('');
+export default function Profile() {
+  const [user, setUser] = useState<User | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const token = getSessionToken();
-        if (!token) {
-          clearSession();
-          navigate('/login');
-          return;
-        }
-        const res = await api.userRoute({ headers: { Authorization: `Bearer ${token}` } });
-        setUser(res.data);
-      } catch (err: any) {
-        setError(err?.response?.data?.error || 'Failed to fetch profile');
-        clearSession();
-        navigate('/login');
-      }
-    };
-    fetchProfile();
-  }, [navigate]);
-
-  if (error) return <div style={{color: 'red'}}>{error}</div>;
-  if (!user) return <div>Loading...</div>;
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+    if (location.state && (location.state as any).user) {
+      setUser((location.state as any).user);
+      return;
+    }
+    protectedApi.userRoute()
+      .then(res => setUser(res.data))
+      .catch(() => {
+        navigate("/login");
+      });
+  }, [navigate, location.state]);
 
   return (
-    <div>
+    <div className="profile-container">
       <h2>Profile</h2>
-      <div>Email: {user.email}</div>
-      <div>First Name: {user.first_name}</div>
-      <div>Last Name: {user.last_name}</div>
-      <div>Role: {user.role}</div>
+      {user ? (
+        <pre className="profile-data">{JSON.stringify(user, null, 2)}</pre>
+      ) : (
+        <p>Loading...</p>
+      )}
     </div>
   );
-};
-
-export default Profile; 
+}

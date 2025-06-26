@@ -1,40 +1,48 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AuthApi, Configuration } from '../ts-client';
-import { setSession } from '../session';
+import React, { useState } from "react";
+import { authApi } from "../api";
+import { Link, useNavigate } from "react-router-dom";
+import { protectedApi } from "../api";
 
-const api = new AuthApi(new Configuration({ basePath: 'http://localhost:3000' }));
-
-const Login: React.FC = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setMessage(null);
     try {
-      const res = await api.login({ email: username, password });
-      localStorage.setItem('accessToken', res.data.token);
-      setSession(res.data.token);
-      navigate('/profile');
+      const { data } = await authApi.login({ email, password });
+      localStorage.setItem("token", data.token);
+      setMessage({ type: "success", text: "Login successful! Loading your profile..." });
+      // Fetch user profile after login
+      const profileRes = await protectedApi.userRoute();
+      setTimeout(() => {
+        navigate("/profile", { state: { user: profileRes.data } });
+      }, 800);
     } catch (err: any) {
-      setError(err?.response?.data?.error || 'Login failed');
+      let errorMsg = "Login failed. Please check your credentials.";
+      if (err && err.response && err.response.data && typeof err.response.data === "string") {
+        errorMsg = err.response.data;
+      } else if (err && err.response && err.response.data && err.response.data.message) {
+        errorMsg = err.response.data.message;
+      }
+      setMessage({ type: "error", text: errorMsg });
+      console.error("Login error:", err);
     }
   };
 
   return (
-    <div>
+    <form className="auth-form" onSubmit={handleLogin}>
       <h2>Login</h2>
-      <form onSubmit={handleSubmit}>
-        <input type="text" placeholder="Email" value={username} onChange={e => setUsername(e.target.value)} required />
-        <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} required />
-        <button type="submit">Login</button>
-      </form>
-      {error && <div style={{color: 'red'}}>{error}</div>}
-    </div>
+      {message && (
+        <div className={`form-message ${message.type}`}>{message.text}</div>
+      )}
+      <input className="auth-input" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+      <input className="auth-input" placeholder="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+      <button className="auth-btn" type="submit">Login</button>
+      <p className="switch-link">Not registered? <Link to="/register">Register here</Link></p>
+    </form>
   );
-};
-
-export default Login; 
+}

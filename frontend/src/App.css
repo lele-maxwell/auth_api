@@ -36,3 +36,133 @@
     transform: rotate(360deg);
   }
 }
+
+/* Navbar styles */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #18181b; /* soft black */
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+}
+.logo {
+  color: #a259f7; /* purple */
+  font-weight: bold;
+  font-size: 1.5rem;
+  margin: 0;
+}
+.nav-links a {
+  color: #22c55e; /* green */
+  text-decoration: none;
+  margin-left: 1.5rem;
+  font-weight: 500;
+  font-size: 1.1rem;
+  transition: color 0.2s;
+}
+.nav-links a:hover {
+  color: #a259f7; /* purple */
+}
+
+/* Container for pages */
+.container {
+  max-width: 400px;
+  margin: 2rem auto;
+  background: #23232b; /* soft black, lighter */
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+  padding: 2rem 2.5rem;
+}
+
+/* Auth forms */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+.auth-form h2 {
+  color: #a259f7;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+.auth-input {
+  padding: 0.8rem 1rem;
+  border: 1.5px solid #a259f7;
+  border-radius: 8px;
+  background: #18181b;
+  color: #fff;
+  font-size: 1rem;
+  outline: none;
+  transition: border 0.2s;
+}
+.auth-input:focus {
+  border: 1.5px solid #22c55e;
+}
+.auth-btn {
+  background: linear-gradient(90deg, #22c55e 60%, #a259f7 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.9rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(34,197,94,0.08);
+}
+.auth-btn:hover {
+  background: linear-gradient(90deg, #a259f7 60%, #22c55e 100%);
+}
+.switch-link {
+  text-align: center;
+  color: #fff;
+  font-size: 0.97rem;
+}
+.switch-link a {
+  color: #22c55e;
+  text-decoration: underline;
+  margin-left: 0.3rem;
+}
+.switch-link a:hover {
+  color: #a259f7;
+}
+
+/* Profile styles */
+.profile-container {
+  background: #23232b;
+  border-radius: 16px;
+  padding: 2rem 2.5rem;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.12);
+  color: #fff;
+  text-align: center;
+}
+.profile-data {
+  background: #18181b;
+  color: #22c55e;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+  text-align: left;
+  font-size: 1rem;
+  overflow-x: auto;
+}
+
+.form-message {
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+  text-align: center;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.form-message.success {
+  background: #22c55e22;
+  color: #22c55e;
+  border: 1.5px solid #22c55e;
+}
+.form-message.error {
+  background: #a259f722;
+  color: #a259f7;
+  border: 1.5px solid #a259f7;
+}

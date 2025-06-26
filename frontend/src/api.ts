@@ -1,11 +1,13 @@
-import { Configuration, AuthApi, ProtectedApi} from '@maxwell/auth-client';
+import {
+  AuthApi,
+  ProtectedApi,
+  Configuration
+} from "@maxwell/auth-client";
 
-const token = localStorage.getItem('token');
-
-export const apiConfig = new Configuration({
-  basePath: 'http://localhost:3000', // Rust API URL
-  accessToken: token ?? undefined,
+const config = new Configuration({
+  basePath: "http://localhost:3000", // Update to your backend URL
+  accessToken: () => localStorage.getItem("token") || ""
 });
 
-export const authApi = new AuthApi(apiConfig);
-export const userApi = new ProtectedApi(apiConfig); // Example: for profile fetch
+export const authApi = new AuthApi(config);
+export const protectedApi = new ProtectedApi(config);

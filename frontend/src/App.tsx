@@ -1,26 +1,28 @@
-import React, { ReactNode } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Profile from './pages/Profile';
-import { isSessionValid } from './session';
-
-function RequireAuth({ children }: { children: ReactNode }): React.ReactElement | null {
-  return isSessionValid() ? (children as React.ReactElement) : <Navigate to="/login" replace />;
-}
+import React from "react";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Profile from "./pages/Profile";
 
 function App() {
   return (
     <Router>
-      <nav>
-        <Link to="/login">Login</Link> | <Link to="/register">Register</Link> | <Link to="/profile">Profile</Link>
+      <nav className="navbar">
+        <h1 className="logo">Auth Demo</h1>
+        <div className="nav-links">
+          <Link to="/login">Login</Link>
+          <Link to="/register">Register</Link>
+          <Link to="/profile">Profile</Link>
+        </div>
       </nav>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
-        <Route path="/" element={<Navigate to="/login" replace />} />
-      </Routes>
+      <div className="container">
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="*" element={<Login />} />
+        </Routes>
+      </div>
     </Router>
   );
 }
