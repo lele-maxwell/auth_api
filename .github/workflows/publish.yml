@@ -2,7 +2,7 @@ name: Generate & Publish TS Client
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     paths:
       - 'api/**'
       - 'openapi.json'
